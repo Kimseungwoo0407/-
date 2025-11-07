@@ -1,0 +1,272 @@
+1. Reuse·Reengineering·Reverse Engineering
+2. 요구분석-설계-구현-테스트-유지보수
+3. People-Process-Product
+4. Organic-Semidetached-Embedded
+5. EI·EO·EQ·ILF·EIF
+6. 레이리(Rayleigh) 곡선(SLIM/PI)
+7. RPC
+8. MOM(메시지 지향 미들웨어)
+9. ORB/CORBA
+10. ODBC(또는 JDBC)
+11. TP-모니터
+12. WAS
+13. ESB
+14. HIPO – 가시적·총체적·상세(IPO) 도표
+15. 객체·동적·기능 모델링 – (클래스/상태·시퀀스/DFD)
+16. 레이어드(Layered) 패턴
+17. 레이어드(Layered) 패턴
+18. 클라이언트-서버 패턴
+19. 마스터-슬레이브 패턴
+20. 파이프-필터 패턴
+21. 브로커 패턴
+22. P2P 패턴
+23. 이벤트 버스(발행-구독) 패턴
+24. MVC 패턴
+25. 블랙보드 패턴
+26. 인터프리터 패턴
+27. 사물(Things)·관계(Relationships)·다이어그램(Diagrams)
+28. 직관성·유효성·학습성·유연성
+29. 자료 결합(Data coupling)
+30. 스탬프 결합(Stamp coupling)
+31. 제어 결합(Control coupling)
+32. 외부 결합(External coupling)
+33. 공통 결합(Common coupling)
+34. 내용 결합(Content coupling)
+35. 기능적 응집(Functional)
+36. 순차적 응집(Sequential)
+37. 통신적 응집(Communicational)
+38. 절차적 응집(Procedural)
+39. 시간적 응집(Temporal)
+40. 논리적 응집(Logical)
+41. 우연적 응집(Coincidental)
+42. ①
+43. ORM
+44. 포인트투포인트·허브앤스포크·메시지버스·하이브리드
+45. 캡슐화
+46. 정보 은닉
+47. 상속
+48. 다형성
+49. 추상화
+50. SRP(단일 책임 원칙)
+51. OCP(개방-폐쇄 원칙)
+52. LSP(리스코프 치환 원칙)
+53. ISP(인터페이스 분리 원칙)
+54. DIP(의존성 역전 원칙)
+55. 추상 팩토리(Abstract Factory)
+56. 빌더(Builder)
+57. 팩토리 메서드(Factory Method)
+58. 프로토타입(Prototype)
+59. 싱글턴(Singleton)
+60. 어댑터(Adapter)
+61. 브리지(Bridge)
+62. 컴포지트(Composite)
+63. 데코레이터(Decorator)
+64. 퍼사드(Facade)
+65. 플라이웨이트(Flyweight)
+66. 프록시(Proxy)
+67. 책임 연쇄(Chain of Responsibility)
+68. 커맨드(Command)
+69. 인터프리터(Interpreter)
+70. 이터레이터(Iterator)
+71. 미디에이터(Mediator)
+72. 메멘토(Memento)
+73. 옵서버(Observer)
+74. 스테이트(State)
+75. 전략(Strategy)
+76. 템플릿 메서드(Template Method)
+77. 비지터(Visitor)
+78. 참 오라클(True Oracle)
+79. 샘플링 오라클(Sampled)
+80. 휴리스틱/추정 오라클(Heuristic)
+81. 일관성 검사(회귀) 오라클
+82. 구문(문장) 커버리지(Statement)
+83. 조건 커버리지(Condition)
+84. 결정/분기 커버리지(Decision/Branch)
+85. 조건/결정 커버리지(C/DC)
+86. 수정 조건/결정 커버리지(MC/DC)
+87. 다중 조건 커버리지(Multiple Condition)
+88. 처리량·응답시간·자원사용률·가용성
+89. 공유 데이터
+90. 저장 데이터
+91. 통합 데이터
+92. 운영 데이터
+93. 구조(Structure)
+94. 연산(Operation)
+95. 제약조건(Constraint)
+96. 제1정규형(1NF)
+97. 제2정규형(2NF)
+98. 제3정규형(3NF)
+99. BCNF
+100. 제4정규형(4NF)
+101. 제5정규형(5NF)
+102. 즉시 갱신(Eager/Immediate update)
+103. 지연 갱신(Lazy/Deferred update)
+104. RTO
+105. RPO
+106. 개체 무결성
+107. 참조 무결성
+108. 도메인 무결성
+109. 고유(유일) 무결성
+110. 키 무결성
+111. 릴레이션 무결성
+112. Restrict
+113. Cascade
+114. 위치 투명성
+115. 분할 투명성
+116. 지역사상 투명성
+117. 중복 투명성
+118. 병행 투명성
+119. 장애 투명성
+120. 원자성
+121. 일관성
+122. 격리성(독립성)
+123. 영속성
+124. FIFO
+125. OPT(Optimal)
+126. LRU
+127. LFU
+128. NUR
+129. Second-Chance(Clock)
+130. 선점형 스케줄링
+131. 비선점형 스케줄링
+132. 라운드 로빈(RR)
+133. SRT
+134. FCFS
+135. SJF
+136. HRN
+137. 라운드 로빈(RR)
+138. SRT
+139. MLQ
+140. MLFQ
+141. FCFS
+142. SJF
+143. HRN
+144. 우선순위 스케줄링
+145. 기한부(Deadline) 스케줄링
+146. DAS
+147. NAS
+148. SAN
+149. 스트라이핑
+150. 미러링
+151. RAID 0
+152. RAID 1
+153. RAID 2
+154. RAID 3
+155. RAID 4
+156. RAID 5
+157. RAID 6
+158. IP 주소
+159. IPv4
+160. IPv6
+161. 유니캐스트
+162. 멀티캐스트
+163. 브로드캐스트
+164. 애니캐스트
+165. NAT
+166. DNS
+167. QoS
+168. VPN
+169. DHCP
+170. FEC(전진 오류 수정)
+171. BEC(후진 오류 수정)
+172. 해밍 코드
+173. 블록합(Checksum)
+174. RIP
+175. RIP
+176. OSPF
+177. BGP
+178. 응용 계층
+179. 표현 계층
+180. 세션 계층
+181. 전송 계층
+182. 네트워크 계층
+183. 데이터 링크 계층
+184. 물리 계층
+185. IP
+186. TCP
+187. ISMS
+188. DES
+189. 3DES
+190. AES
+191. SEED
+192. ARIA
+193. IDEA
+194. LEA
+195. SKIPJACK
+196. 무차별 대입(Brute-force)
+197. 키 스트레칭(Key Stretching)
+198. 레인보우 테이블 공격
+199. 솔팅(Salting)
+200. MAC
+201. DAC
+202. RBAC
+203. ESM
+204. SOAR
+205. SIEM
+206. SSH
+207. SSL(HTTPS)
+208. TLS
+209. IPSec
+210. AH
+211. ESP
+212. S-HTTP
+213. RadSec
+214. 스머프 공격
+215. Ping of Death
+216. Land 공격
+217. Teardrop 공격
+218. SYN Flooding
+219. UDP Flooding
+220. Ping Flooding
+221. 웜(Worm)
+222. 바이러스(Virus)
+223. 트로이 목마(Trojan)
+224. 스턱스넷(Stuxnet)
+225. 루팅(Rooting)
+226. 루트킷(Rootkit)
+227. 혹스(Hoax)
+228. 스니핑(Sniffing)
+229. IP 스푸핑
+230. ARP 스푸핑
+231. DNS 스푸핑
+232. 파밍(Pharming)
+233. 타이포스쿼팅(Typosquatting)
+234. 스미싱(Smishing)
+235. 큐싱(Qshing)
+236. 포트 스캐닝
+237. 세션 하이재킹
+238. 버퍼 오버플로우
+239. 포맷 스트링 공격
+240. SQL 인젝션
+241. XSS
+242. CSRF
+243. 백도어(Backdoor)
+244. 패스워드 크래킹
+245. 레인보우 테이블
+246. APT
+247. 너킹(Nucking)
+248. 부채널 공격(Side-channel)
+249. 브루트포스(Brute-force)
+250. 사전(Dictionary) 공격
+251. 키로거(Keylogger)
+252. 스파이웨어(Spyware)
+253. 애드웨어(Adware)
+254. 트랙웨어(Trackware)
+255. 그레이웨어(Greyware)
+256. 크라임웨어(Crimeware)
+257. 랜섬웨어(Ransomware)
+258. 제로데이(Zero-day) 공격
+259. 사회공학(Social Engineering)
+260. 이블 트윈(Evil Twin)
+261. 블루버그(BlueBug)
+262. 블루스나프(BlueSnarf)
+263. 블루프린팅(BluePrinting)
+264. 블루재킹(BlueJacking)
+265. 스위치 재밍(Switch Jamming)
+266. 허니팟(Honeypot)
+267. 블루킵(BlueKeep) 공격
+268. 인포데믹스(Infodemics)
+269. 살라미(Salami) 기법
+270. 다크 데이터(Dark Data)
+271. 킬 스위치(Kill Switch)
+272. 트러스트존(TrustZone)
