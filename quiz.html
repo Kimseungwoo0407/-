@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>공부 퀴즈 (정답 매핑 포함)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f3f6fb; color:#1f2937; padding:22px; }
+  .container{ max-width:900px; margin:24px auto; background:white; padding:22px; border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08); }
+  h1{ margin:0 0 10px 0; font-size:22px; }
+  .controls{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  button{ padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+  .btn-primary{ background:#2563eb; color:white; }
+  .btn-success{ background:#16a34a; color:white; }
+  .btn-danger{ background:#dc2626; color:white; }
+  .btn-muted{ background:#e5e7eb; color:#111827; }
+  pre{ white-space:pre-wrap; text-align:left; background:#f8fafc; padding:16px; border-radius:8px; font-size:16px; }
+  #answer { margin-top:10px; font-weight:700; color:#0f172a; }
+  .meta{ font-size:13px; color:#6b7280; margin-top:8px; }
+  .file-row{ display:flex; gap:8px; align-items:center; margin-bottom:12px; }
+  .small{ font-size:13px; color:#374151; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>공부 퀴즈 — 정답 매핑 포함</h1>
+    <p class="small">`공부.txt`와 `정답.txt`를 각각 선택하세요. (같은 디렉토리에 있어도 됩니다.)</p>
+
+    <div class="file-row">
+      <label>
+        문제 파일 (.txt) 
+        <input id="fileQuestions" type="file" accept=".txt" />
+      </label>
+      <label>
+        정답 파일 (.txt)
+        <input id="fileAnswers" type="file" accept=".txt" />
+      </label>
+      <button id="loadBtn" class="btn-primary">불러오기 & 섞기</button>
+      <button id="clearWrong" class="btn-muted">틀린문제 초기화</button>
+    </div>
+
+    <div id="quizArea" style="display:none;">
+      <div class="meta" id="metaInfo"></div>
+      <pre id="questionBox">문제가 여기에 표시됩니다.</pre>
+
+      <div class="controls">
+        <button id="showAnswerBtn" class="btn-muted">정답 보기</button>
+        <button id="correctBtn" class="btn-success">맞음 ✅</button>
+        <button id="wrongBtn" class="btn-danger">틀림 ❌</button>
+        <button id="nextBtn" class="btn-primary">다음 ▶</button>
+        <button id="toggleWrongMode" class="btn-muted">틀린 문제만 보기: 끔</button>
+        <button id="shuffleBtn" class="btn-muted">다시 섞기 🔀</button>
+        <button id="exportWrong" class="btn-muted">틀린문제 내보내기(.txt)</button>
+      </div>
+
+      <div id="answer" style="display:none;"></div>
+      <div class="meta" id="progress"></div>
+    </div>
+  </div>
+
+<script>
+/*
+  동작 요약:
+   - 공부.txt: 번호(예: "1.") 기준으로 문제 분리 (번호 보존)
+   - 정답.txt: 줄단위/공백단위로 정답 배열 생성 -> 인덱스 기준으로 문제와 매핑
+   - 문제셋은 섞기(shuffle)되지만 매핑은 원래 인덱스(문제 번호순) 기준으로 유지
+   - 틀린 문제는 localStorage에 저장됨 (key: "quiz_wrong_list")
+*/
+
+const fileQ = document.getElementById('fileQuestions');
+const fileA = document.getElementById('fileAnswers');
+const loadBtn = document.getElementById('loadBtn');
+const quizArea = document.getElementById('quizArea');
+const questionBox = document.getElementById('questionBox');
+const showAnswerBtn = document.getElementById('showAnswerBtn');
+const answerDiv = document.getElementById('answer');
+const correctBtn = document.getElementById('correctBtn');
+const wrongBtn = document.getElementById('wrongBtn');
+const nextBtn = document.getElementById('nextBtn');
+const metaInfo = document.getElementById('metaInfo');
+const progress = document.getElementById('progress');
+const toggleWrongModeBtn = document.getElementById('toggleWrongMode');
+const shuffleBtn = document.getElementById('shuffleBtn');
+const clearWrongBtn = document.getElementById('clearWrong');
+const exportWrongBtn = document.getElementById('exportWrong');
+
+let rawQuestions = [];   // 원본 문제 객체 배열 {num: int, text: string}
+let answers = [];        // 정답 배열, 인덱스 0 -> 1번 문제 정답 (we'll store at index num-1)
+let workList = [];       // 섞인 문제 참조 (참조: rawQuestions elements)
+let currentIndex = 0;
+let wrongSet = new Set(JSON.parse(localStorage.getItem('quiz_wrong_list') || '[]'));
+let mode = 'all'; // 'all' or 'wrong'
+
+function readFileAsText(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = e => rej(e);
+    r.readAsText(file, 'utf-8');
+  });
+}
+
+function splitQuestions(text) {
+  // 문제 텍스트를 "숫자. " 로 구분. 번호가 안 붙어있으면 라인별로 처리.
+  // 정규식: 숫자와 점으로 시작하는 블록을 찾아 분리
+  const trimmed = text.trim();
+  // find all matches for groups that start with "^숫자." using global multiline
+  const blocks = [];
+  // If there are numbered items, split by lines that start with digit+.
+  if (/^\s*\d+\./m.test(trimmed)) {
+    // split by positions of lines starting with number dot
+    const parts = trimmed.split(/\n(?=\s*\d+\.)/g);
+    for (const p of parts) {
+      const m = p.match(/^\s*(\d+)\.\s*/);
+      if (m) {
+        const num = parseInt(m[1],10);
+        const body = p.replace(/^\s*\d+\.\s*/, '').trim();
+        blocks.push({num, text: body});
+      } else {
+        // fallback: push as-is with auto-num
+        blocks.push({num: blocks.length+1, text: p.trim()});
+      }
+    }
+  } else {
+    // No numbered format: treat each non-empty line as one question
+    const lines = trimmed.split(/\r?\n/).map(s => s.trim()).filter(s => s.length>0);
+    lines.forEach((ln,i) => blocks.push({num: i+1, text: ln}));
+  }
+  return blocks;
+}
+
+function parseAnswers(text) {
+  // 정답파일: 가능한 한 각 줄을 하나의 정답으로 간주.
+  // 여러개의 연속 공백 라인을 무시.
+  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length>0);
+  // If each line looks like "1. 답", remove leading "번호." if present.
+  return lines.map(l => l.replace(/^\s*\d+\.\s*/, '').trim());
+}
+
+function shuffle(array) {
+  for (let i=array.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function buildWorkList() {
+  // workList는 rawQuestions 참조를 섞은 배열
+  workList = rawQuestions.slice();
+  shuffle(workList);
+  currentIndex = 0;
+}
+
+function displayCurrent() {
+  answerDiv.style.display = 'none';
+  answerDiv.textContent = '';
+  quizArea.style.display = 'block';
+  if (mode === 'all' && workList.length===0) {
+    questionBox.textContent = '문제가 없습니다. 파일을 불러오세요.';
+    progress.textContent = '';
+    metaInfo.textContent = '';
+    return;
+  }
+  if (mode === 'wrong') {
+    const wrongArray = workList.filter(q => wrongSet.has(q.num));
+    if (wrongArray.length===0) {
+      questionBox.textContent = '📚 틀린 문제가 없습니다.';
+      progress.textContent = '';
+      metaInfo.textContent = '';
+      return;
+    }
+    if (!wrongArray[currentIndex]) currentIndex = 0;
+    const q = wrongArray[currentIndex];
+    questionBox.textContent = `${q.num}. ${q.text}`;
+    progress.textContent = `${currentIndex+1} / ${wrongArray.length} (틀린 문제만)`;
+    metaInfo.textContent = `원본 문제 수: ${rawQuestions.length} / 저장된 틀린 문제 수: ${wrongSet.size}`;
+    return;
+  }
+  // all mode
+  if (workList.length===0) {
+    questionBox.textContent = '문제가 없습니다.';
+    progress.textContent = '';
+    metaInfo.textContent = '';
+    return;
+  }
+  if (!workList[currentIndex]) currentIndex = 0;
+  const q = workList[currentIndex];
+  questionBox.textContent = `${q.num}. ${q.text}`;
+  progress.textContent = `${currentIndex+1} / ${workList.length} (전체 모드)`;
+  metaInfo.textContent = `원본 문제 수: ${rawQuestions.length} / 저장된 틀린 문제 수: ${wrongSet.size}`;
+}
+
+showAnswerBtn.addEventListener('click', () => {
+  // 현재 표시된 문제의 번호를 찾아 정답 배열에서 뽑아 보여준다.
+  answerDiv.style.display = 'block';
+  const q = getCurrentQuestion();
+  if (!q) {
+    answerDiv.textContent = '정답 없음';
+    return;
+  }
+  const ans = answers[q.num - 1];
+  answerDiv.textContent = ans ? `정답: ${ans}` : '정답 정보가 없습니다.';
+});
+
+function getCurrentQuestion() {
+  if (mode === 'wrong') {
+    const wrongArray = workList.filter(q => wrongSet.has(q.num));
+    return wrongArray[currentIndex] || null;
+  } else {
+    return workList[currentIndex] || null;
+  }
+}
+
+correctBtn.addEventListener('click', () => {
+  const q = getCurrentQuestion();
+  if (!q) return;
+  // 맞음: 틀린셋에서 제거(있다면)
+  if (wrongSet.has(q.num)) {
+    wrongSet.delete(q.num);
+    saveWrongSet();
+  }
+  nextQuestion();
+});
+
+wrongBtn.addEventListener('click', () => {
+  const q = getCurrentQuestion();
+  if (!q) return;
+  wrongSet.add(q.num);
+  saveWrongSet();
+  nextQuestion();
+});
+
+function nextQuestion() {
+  const list = (mode==='wrong') ? workList.filter(q=>wrongSet.has(q.num)) : workList;
+  if (list.length===0) {
+    displayCurrent();
+    return;
+  }
+  currentIndex++;
+  if (currentIndex >= list.length) currentIndex = 0;
+  displayCurrent();
+}
+
+nextBtn.addEventListener('click', () => {
+  answerDiv.style.display = 'none';
+  nextQuestion();
+});
+
+toggleWrongModeBtn.addEventListener('click', () => {
+  if (mode === 'all') {
+    mode = 'wrong';
+    toggleWrongModeBtn.textContent = '틀린 문제만 보기: 켬';
+  } else {
+    mode = 'all';
+    toggleWrongModeBtn.textContent = '틀린 문제만 보기: 끔';
+  }
+  currentIndex = 0;
+  displayCurrent();
+});
+
+shuffleBtn.addEventListener('click', () => {
+  buildWorkList();
+  displayCurrent();
+});
+
+clearWrongBtn.addEventListener('click', () => {
+  if (!confirm('정말로 틀린 문제 목록을 초기화 하시겠습니까?')) return;
+  wrongSet = new Set();
+  saveWrongSet();
+  displayCurrent();
+});
+
+exportWrongBtn.addEventListener('click', () => {
+  // 틀린 문제들을 텍스트로 묶어 다운로드
+  const list = rawQuestions.filter(q => wrongSet.has(q.num)).map(q => `${q.num}. ${q.text}`);
+  const blob = new Blob([list.join('\n\n')], {type:'text/plain;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '틀린문제.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+function saveWrongSet() {
+  localStorage.setItem('quiz_wrong_list', JSON.stringify(Array.from(wrongSet)));
+}
+
+loadBtn.addEventListener('click', async () => {
+  if (!fileQ.files[0] || !fileA.files[0]) {
+    alert('문제 파일과 정답 파일을 둘 다 선택하세요.');
+    return;
+  }
+  try {
+    const qText = await readFileAsText(fileQ.files[0]);
+    const aText = await readFileAsText(fileA.files[0]);
+    rawQuestions = splitQuestions(qText);
+    answers = parseAnswers(aText); // answers[0] -> 1번 문제의 정답
+    // Ensure answers array has length at least max question number
+    const maxNum = rawQuestions.reduce((m,q)=>Math.max(m,q.num),0);
+    while (answers.length < maxNum) answers.push('');
+    buildWorkList();
+    mode = 'all';
+    toggleWrongModeBtn.textContent = '틀린 문제만 보기: 끔';
+    currentIndex = 0;
+    displayCurrent();
+    quizArea.style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert('파일 읽기 중 오류가 발생했습니다.');
+  }
+});
+
+// 초기 상태: 표시할 내용
+displayCurrent();
+</script>
+</body>
+</html>
