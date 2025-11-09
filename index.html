@@ -217,7 +217,7 @@ async function loadFiles(isExam = false) {
   const filePrefix = isExam ? "모의고사_" : "";
   try {
     const [qRes, aRes] = await Promise.all([
-      fetch(`${filePrefix}공부.txt`),
+      fetch(`${filePrefix}문제.txt`),
       fetch(`${filePrefix}정답.txt`)
     ]);
     if (!qRes.ok || !aRes.ok) {
