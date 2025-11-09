@@ -129,7 +129,7 @@ function displayCurrent() {
       return;
     }
     const q = wrongArray[currentIndex] || wrongArray[0];
-    questionBox.textContent = `${q.num}. ${q.text}`;
+    questionBox.textContent = `${q.text}`;
     progress.textContent = `${currentIndex+1} / ${wrongArray.length} (틀린 문제만)`;
     metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
     return;
