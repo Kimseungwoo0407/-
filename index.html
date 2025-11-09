@@ -256,7 +256,7 @@ function startExamMode() {
 
 function showExamQuestion() {
   const q = workList[examIndex];
-  questionBox.textContent = `${examIndex + 1}. ${q.text}`;
+  questionBox.textContent = `${q.text}`;
   answerDiv.style.display = 'none';
   progress.textContent = `문항 ${examIndex + 1} / ${workList.length}`;
   metaInfo.textContent = `현재 점수: ${score}`;
