@@ -94,7 +94,12 @@ function splitQuestions(text) {
     }
   }
   if (current.trim()) questions.push(current.trim());
-  return questions.map((q, i) => ({ num: i + 1, text: q }));
+  // 🔽 여기만 수정
+  return questions.map((q) => {
+    const match = q.match(/^\s*(\d+)\./);
+    const num = match ? parseInt(match[1]) : null;
+    return { num, text: q };
+  });
 }
 
 // ✅ 정답 텍스트 파싱
@@ -129,7 +134,7 @@ function displayCurrent() {
       return;
     }
     const q = wrongArray[currentIndex] || wrongArray[0];
-    questionBox.textContent = `${q.text}`;
+    questionBox.textContent = `${q.num}. ${q.text}`;
     progress.textContent = `${currentIndex+1} / ${wrongArray.length} (틀린 문제만)`;
     metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
     return;
@@ -256,7 +261,7 @@ function startExamMode() {
 
 function showExamQuestion() {
   const q = workList[examIndex];
-  questionBox.textContent = `${q.text}`;
+  questionBox.textContent = `${examIndex + 1}. ${q.text}`;
   answerDiv.style.display = 'none';
   progress.textContent = `문항 ${examIndex + 1} / ${workList.length}`;
   metaInfo.textContent = `현재 점수: ${score}`;
