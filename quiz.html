@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>공부 퀴즈 (자동 불러오기 + 모의고사 모드)</title>
+<title>공부 퀴즈 (자동 불러오기 버전)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f3f6fb; color:#1f2937; padding:22px; }
@@ -21,14 +21,14 @@
 </head>
 <body>
   <div class="container">
-    <h1>공부 퀴즈 — 자동 로드 & 모의고사 모드</h1>
-    <p class="meta">같은 폴더의 <code>공부.txt</code> / <code>정답.txt</code> 또는 <code>모의고사_문제.txt</code> / <code>모의고사_정답.txt</code>를 자동으로 불러옵니다.</p>
+    <h1>공부 퀴즈 — 자동 로드 버전</h1>
+    <p class="meta">같은 폴더의 <code>공부.txt</code>와 <code>정답.txt</code>가 자동으로 불러와집니다.</p>
 
     <div id="quizArea" style="display:none;">
       <div class="meta" id="metaInfo"></div>
       <pre id="questionBox">문제가 여기에 표시됩니다.</pre>
 
-      <div class="controls" id="buttonBox">
+      <div class="controls">
         <button id="showAnswerBtn" class="btn-muted">정답 보기</button>
         <button id="correctBtn" class="btn-success">맞음 ✅</button>
         <button id="wrongBtn" class="btn-danger">틀림 ❌</button>
@@ -65,7 +65,6 @@ const toggleWrongModeBtn = document.getElementById('toggleWrongMode');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const clearWrongBtn = document.getElementById('clearWrong');
 const exportWrongBtn = document.getElementById('exportWrong');
-const buttonBox = document.getElementById('buttonBox');
 
 function splitQuestions(text) {
   const trimmed = text.trim();
@@ -143,20 +142,18 @@ function getCurrentQuestion() {
 
 showAnswerBtn.addEventListener('click', () => {
   const q = getCurrentQuestion();
-  if (!q || examMode) return;
+  if (!q) return;
   answerDiv.style.display = 'block';
   const ans = answers[q.num - 1];
   answerDiv.textContent = ans ? `정답: ${ans}` : '정답 정보가 없습니다.';
 });
 
 correctBtn.addEventListener('click', () => {
-  if (examMode) return;
   const q = getCurrentQuestion(); if (!q) return;
   wrongSet.delete(q.num); saveWrongSet(); nextQuestion();
 });
 
 wrongBtn.addEventListener('click', () => {
-  if (examMode) return;
   const q = getCurrentQuestion(); if (!q) return;
   wrongSet.add(q.num); saveWrongSet(); nextQuestion();
 });
@@ -170,23 +167,20 @@ function nextQuestion() {
 }
 
 toggleWrongModeBtn.addEventListener('click', () => {
-  if (examMode) return;
   mode = (mode==='all') ? 'wrong' : 'all';
   toggleWrongModeBtn.textContent = `틀린 문제만 보기: ${mode==='wrong'?'켬':'끔'}`;
   currentIndex = 0;
   displayCurrent();
 });
 
-shuffleBtn.addEventListener('click', () => { if (!examMode){ buildWorkList(); displayCurrent(); } });
+shuffleBtn.addEventListener('click', () => { buildWorkList(); displayCurrent(); });
 
 clearWrongBtn.addEventListener('click', () => {
-  if (examMode) return;
   if (!confirm('틀린 문제 기록을 초기화할까요?')) return;
   wrongSet = new Set(); saveWrongSet(); displayCurrent();
 });
 
 exportWrongBtn.addEventListener('click', () => {
-  if (examMode) return;
   const list = rawQuestions.filter(q => wrongSet.has(q.num)).map(q => `${q.num}. ${q.text}`);
   const blob = new Blob([list.join('\n\n')], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
@@ -201,70 +195,33 @@ function saveWrongSet() {
 
 // ✅ 페이지 로드 시 자동으로 파일 로드
 window.addEventListener("DOMContentLoaded", async () => {
-  const isExam = location.search.includes("mode=exam");
-  const filePrefix = isExam ? "모의고사_" : "";
   try {
     const [qRes, aRes] = await Promise.all([
-      fetch(`${filePrefix}공부.txt`),
-      fetch(`${filePrefix}정답.txt`)
+      fetch("공부.txt"),
+      fetch("정답.txt")
     ]);
+
     if (!qRes.ok || !aRes.ok) {
-      questionBox.textContent = `⚠️ ${filePrefix}공부.txt 또는 ${filePrefix}정답.txt를 찾을 수 없습니다.`;
+      questionBox.textContent = "⚠️ 공부.txt 또는 정답.txt를 찾을 수 없습니다. 같은 폴더에 두세요.";
       return;
     }
+
     const qText = await qRes.text();
     const aText = await aRes.text();
+
     rawQuestions = splitQuestions(qText);
     answers = parseAnswers(aText);
-    if (isExam) startExamMode();
-    else { buildWorkList(); displayCurrent(); }
+
+    const maxNum = rawQuestions.reduce((m,q)=>Math.max(m,q.num),0);
+    while (answers.length < maxNum) answers.push('');
+
+    buildWorkList();
+    displayCurrent();
   } catch (err) {
-    questionBox.textContent = "파일 불러오기 오류: " + err;
+    questionBox.textContent = "파일 불러오기 중 오류 발생: " + err;
+    console.error(err);
   }
 });
-
-// 🧮 모의고사 모드
-let examIndex = 0, score = 0, examMode = false;
-function startExamMode() {
-  examMode = true;
-  quizArea.style.display = 'block';
-  buttonBox.style.display = 'none';
-  workList = rawQuestions.slice(0, 50);
-  shuffle(workList);
-  examIndex = 0;
-  score = 0;
-  showExamQuestion();
-}
-
-function showExamQuestion() {
-  const q = workList[examIndex];
-  questionBox.textContent = `${examIndex + 1}. ${q.text}`;
-  answerDiv.style.display = 'none';
-  progress.textContent = `문항 ${examIndex + 1} / ${workList.length}`;
-  metaInfo.textContent = `현재 점수: ${score}`;
-}
-
-document.addEventListener("keydown", (e) => {
-  if (!examMode) return;
-  if (e.key >= "1" && e.key <= "4") {
-    const q = workList[examIndex];
-    const correct = answers[q.num - 1];
-    const isCorrect = q.text.includes(correct);
-    if (isCorrect) score++;
-    examIndex++;
-    if (examIndex >= workList.length) showExamResult();
-    else showExamQuestion();
-  }
-});
-
-function showExamResult() {
-  const percent = (score / workList.length * 100).toFixed(1);
-  questionBox.textContent = `✅ 시험 종료!\n당신의 점수: ${score} / ${workList.length} (${percent}%)`;
-  answerDiv.textContent = percent >= 90 ? "🎉 만점 수준!" :
-                          percent >= 70 ? "👍 합격 가능" :
-                          "⚠️ 추가 복습 필요";
-  answerDiv.style.display = "block";
-}
 </script>
 </body>
 </html>

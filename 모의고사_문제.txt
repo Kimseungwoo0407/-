@@ -1,0 +1,149 @@
+1. Transformer의 핵심 메커니즘은 무엇인가?
+① Attention ② Convolution ③ Recurrence ④ Normalization
+
+2. LLM의 입력 단위인 토큰(Token)은 무엇을 의미하는가?
+① 단어 또는 단어 조각 ② 문장 전체 ③ 단락 ④ 문서
+
+3. Self-Attention의 주요 목적은?
+① 입력 간 관계 파악 ② 모델 압축 ③ 손실 감소 ④ 속도 향상
+
+4. Fine-tuning의 목적은?
+① 특정 도메인에 모델을 적응시키기 위해 ② 모델 경량화 ③ 손실 보정 ④ GPU 사용률 증가
+
+5. Prompt-tuning의 주요 특징은?
+① 일부 파라미터만 조정하여 빠르게 적응 ② 전체 모델 재학습 ③ 데이터 증강 중심 ④ 비지도 학습 활용
+
+6. Transformer의 Encoder는 어떤 역할을 하는가?
+① 입력 문맥을 벡터로 인코딩 ② 텍스트 생성 ③ 파라미터 정규화 ④ 학습률 조정
+
+7. Attention 계산의 세 요소는?
+① Query, Key, Value ② Input, Output, Loss ③ Token, Layer, Gradient ④ Node, Edge, Weight
+
+8. RAG(Retrieval-Augmented Generation)의 핵심 아이디어는?
+① 외부 지식 검색과 생성 결합 ② 모델 크기 축소 ③ 데이터 증강 ④ 하이퍼튜닝 자동화
+
+9. Vector Database의 주된 용도는?
+① 벡터 유사도 기반 검색 ② 데이터베이스 정규화 ③ 손실 최소화 ④ 토큰화
+
+10. NeMo Framework의 주요 기능은?
+① LLM 학습·튜닝·배포 지원 ② GPU 전력 제어 ③ 이미지 렌더링 ④ 데이터 압축
+
+11. Triton Inference Server의 역할은?
+① 모델 배포 및 추론 서비스 제공 ② 학습 자동화 ③ 데이터 증강 ④ 하이퍼파라미터 최적화
+
+12. TensorRT의 핵심 목적은?
+① 추론 속도 최적화 ② 학습률 조정 ③ 파라미터 감소 ④ 손실 함수 변경
+
+13. Riva의 주된 사용 사례는?
+① 음성 인식과 합성 ② 이미지 변환 ③ 모델 검증 ④ 데이터 시각화
+
+14. Python에서 API 호출에 일반적으로 사용하는 방식은?
+① REST API ② FTP Request ③ SSH ④ Socket Stream
+
+15. Overfitting을 방지하기 위한 기법은?
+① Dropout ② Batch Normalization ③ Epoch 증가 ④ 학습률 증가
+
+16. 하이퍼파라미터 튜닝의 목적은?
+① 성능 향상 조합 탐색 ② 모델 크기 감소 ③ 데이터 변환 ④ GPU 효율 개선
+
+17. Validation Loss가 상승하지만 Training Loss가 감소한다면?
+① 과적합 발생 ② 학습률 너무 낮음 ③ 데이터 부족 ④ Batch Size 오류
+
+18. MLflow의 주요 기능은?
+① 실험 기록 및 버전 관리 ② 시각화 전용 ③ GPU 모니터링 ④ 파라미터 감소
+
+19. 실험 재현성 확보를 위한 핵심 조치는?
+① random seed 고정 및 환경 버전 관리 ② Dropout 제거 ③ 모델 축소 ④ 데이터 추가
+
+20. Optuna의 특징은?
+① 효율적인 하이퍼파라미터 탐색 자동화 ② Dropout 제어 ③ 데이터 분할 ④ 손실 계산
+
+21. Precision과 Recall의 조화 평균으로 구성된 지표는?
+① F1 Score ② Accuracy ③ Loss ④ ROC-AUC
+
+22. 데이터 결측값 처리는 어떻게 하는가?
+① 제거 또는 대체 ② 무시 ③ 랜덤 치환 ④ 스케일링
+
+23. StandardScaler의 변환 방식은?
+① 평균 0, 분산 1로 정규화 ② 0~1 정규화 ③ 로그 변환 ④ z-score 반전
+
+24. Pandas의 주요 역할은?
+① 데이터 분석과 조작 ② 모델 평가 ③ 손실 최소화 ④ GPU 관리
+
+25. Matplotlib의 plt.plot()은 주로 어떤 용도인가?
+① 선 그래프 시각화 ② 산점도 ③ 히스토그램 ④ 박스플롯
+
+26. Explainable AI(XAI)의 목적은?
+① 모델의 의사결정 과정을 이해 가능하게 함 ② 성능 향상 ③ 속도 증가 ④ 손실 감소
+
+27. Trustworthy AI의 3대 핵심은?
+① 공정성, 안전성, 설명가능성 ② 정확도, 효율성, 비용 ③ 속도, 메모리, 전력 ④ 성능, 데이터, 크기
+
+28. Responsible AI에서 Accountability는?
+① 인간이 AI 결정에 책임지는 체계 ② 데이터 정제 ③ GPU 관리 ④ 학습률 조정
+
+29. Bias 완화를 위한 접근은?
+① 데이터 다양화 및 밸런싱 ② 모델 크기 감소 ③ Dropout 조정 ④ 손실 함수 변경
+
+30. NeMo Guardrails의 주요 역할은?
+① 대화형 AI의 안전성과 제어 강화 ② 음성 합성 ③ 모델 학습 가속 ④ GPU 관리
+
+31. Guardrails의 “flows” 구성요소는?
+① 대화 정책 및 제어 규칙 ② 데이터 라벨 ③ GPU 할당 ④ Dropout 비율
+
+32. Guardrails의 “rails”는?
+① 허용/금지 응답 규칙 ② 모델 구조 설정 ③ 데이터 버전 기록 ④ 로깅 함수
+
+33. Differential Privacy의 목적은?
+① 개인 정보 보호를 위한 통계적 노이즈 추가 ② 모델 압축 ③ 데이터 정규화 ④ 속도 향상
+
+34. Fairness 검증 방법으로 옳은 것은?
+① 그룹별 성능 차이 분석 ② GPU 사용량 비교 ③ 손실률 차이 ④ 시각화 비교
+
+35. LIME과 SHAP의 공통 목적은?
+① 특징 중요도 기반 모델 해석 ② 손실 최소화 ③ 학습률 제어 ④ 정규화
+
+36. RAG 구조의 Retriever는 어떤 역할을 하는가?
+① 관련 문서 검색 및 벡터 추출 ② 답변 생성 ③ 손실 계산 ④ 모델 평가
+
+37. TensorRT의 FP16 모드의 장점은?
+① 반정밀 연산으로 속도와 효율 향상 ② 정확도 개선 ③ 메모리 증가 ④ 손실 감소
+
+38. TensorRT에서 INT8 Quantization의 목적은?
+① 모델 크기 축소 및 추론 효율 향상 ② 데이터 정규화 ③ GPU 병목 완화 ④ 학습률 조정
+
+39. Triton의 Dynamic Batching 기능은?
+① 요청 자동 병합으로 처리 효율 향상 ② 데이터 병렬화 ③ 파라미터 공유 ④ 모델 축소
+
+40. CUDA Stream의 장점은?
+① GPU 연산 병렬 실행 가능 ② 학습률 조정 ③ 데이터 압축 ④ 정규화 자동화
+
+41. NeMo Megatron의 병렬 학습 전략 중 Tensor Parallelism은?
+① 가중치를 GPU 간 분할 계산 ② 데이터 분할 ③ 시드 고정 ④ 하이퍼튜닝
+
+42. MLOps의 주요 목표는?
+① 모델 개발·배포 자동화 및 신뢰성 향상 ② GPU 병렬화 ③ 하이퍼튜닝 ④ 속도 제어
+
+43. Cross-validation을 사용하는 주된 이유는?
+① 일반화 성능 검증 ② 데이터 크기 조절 ③ GPU 효율 증가 ④ 학습률 향상
+
+44. Early Stopping의 역할은?
+① 과적합 방지를 위해 학습 조기 종료 ② 학습률 고정 ③ 데이터 증강 ④ Dropout 비활성화
+
+45. Mixed Precision Training의 장점은?
+① 학습 속도 향상과 메모리 절약 ② 정확도 향상 ③ 손실 감소 ④ GPU 발열 감소
+
+46. Responsible AI의 “Transparency”는?
+① 모델 의사결정 과정을 설명 가능하게 함 ② 데이터 암호화 ③ 속도 향상 ④ 모델 압축
+
+47. Robustness의 의미는?
+① 입력 변화에 강한 일관된 성능 ② 속도 개선 ③ GPU 효율 ④ 데이터 정규화
+
+48. NVIDIA AI Foundation Models의 목적은?
+① 대규모 사전학습 모델을 API 형태로 제공 ② 데이터 증강 ③ 모델 압축 ④ GPU 관리
+
+49. NVIDIA AI Workbench의 주요 역할은?
+① 로컬-클라우드 통합 개발 환경 제공 ② GPU 모니터링 ③ 데이터 정제 ④ 모델 병합
+
+50. Generative AI의 대표적 응용 분야는?
+① 텍스트·이미지·음성 생성 ② 데이터 분석 ③ 모델 평가 ④ 코드 압축
