@@ -2,11 +2,13 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8" />
-<title>공부 퀴즈 (자동 불러오기 + 모의고사 모드)</title>
+<title>공부 퀴즈 (공부 + 모의고사 통합)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f3f6fb; color:#1f2937; padding:22px; }
-  .container{ max-width:900px; margin:24px auto; background:white; padding:22px; border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08); }
+  body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+         background:#f3f6fb; color:#1f2937; padding:22px; }
+  .container{ max-width:900px; margin:24px auto; background:white; padding:22px;
+              border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08); }
   h1{ margin:0 0 10px 0; font-size:22px; }
   .controls{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
   button{ padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
@@ -21,8 +23,13 @@
 </head>
 <body>
   <div class="container">
-    <h1>공부 퀴즈 — 자동 로드 & 모의고사 모드</h1>
-    <p class="meta">같은 폴더의 <code>공부.txt</code> / <code>정답.txt</code> 또는 <code>모의고사_문제.txt</code> / <code>모의고사_정답.txt</code>를 자동으로 불러옵니다.</p>
+    <h1>🧠 NVIDIA 자격 대비 퀴즈</h1>
+    <p class="meta">같은 폴더의 <code>공부.txt / 정답.txt</code> 또는
+      <code>모의고사_문제.txt / 모의고사_정답.txt</code>를 자동 불러옵니다.</p>
+
+    <div class="controls">
+      <button id="startExamBtn" class="btn-primary">🏁 모의고사 시작</button>
+    </div>
 
     <div id="quizArea" style="display:none;">
       <div class="meta" id="metaInfo"></div>
@@ -51,6 +58,9 @@ let workList = [];
 let currentIndex = 0;
 let wrongSet = new Set(JSON.parse(localStorage.getItem('quiz_wrong_list') || '[]'));
 let mode = 'all';
+let examMode = false;
+let examIndex = 0;
+let score = 0;
 
 const quizArea = document.getElementById('quizArea');
 const questionBox = document.getElementById('questionBox');
@@ -65,30 +75,29 @@ const toggleWrongModeBtn = document.getElementById('toggleWrongMode');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const clearWrongBtn = document.getElementById('clearWrong');
 const exportWrongBtn = document.getElementById('exportWrong');
+const startExamBtn = document.getElementById('startExamBtn');
 const buttonBox = document.getElementById('buttonBox');
 
+// ✅ 문제 텍스트 파싱 (보기 포함)
 function splitQuestions(text) {
   const trimmed = text.trim();
-  const blocks = [];
-  if (/^\s*\d+\./m.test(trimmed)) {
-    const parts = trimmed.split(/\n(?=\s*\d+\.)/g);
-    for (const p of parts) {
-      const m = p.match(/^\s*(\d+)\.\s*/);
-      if (m) {
-        const num = parseInt(m[1],10);
-        const body = p.replace(/^\s*\d+\.\s*/, '').trim();
-        blocks.push({num, text: body});
-      } else {
-        blocks.push({num: blocks.length+1, text: p.trim()});
-      }
+  const lines = trimmed.split(/\r?\n/);
+  const questions = [];
+  let current = '';
+
+  for (const line of lines) {
+    if (/^\s*\d+\./.test(line)) {
+      if (current.trim()) questions.push(current.trim());
+      current = line;
+    } else {
+      current += '\n' + line;
     }
-  } else {
-    const lines = trimmed.split(/\r?\n/).map(s => s.trim()).filter(s => s.length>0);
-    lines.forEach((ln,i) => blocks.push({num: i+1, text: ln}));
   }
-  return blocks;
+  if (current.trim()) questions.push(current.trim());
+  return questions.map((q, i) => ({ num: i + 1, text: q }));
 }
 
+// ✅ 정답 텍스트 파싱
 function parseAnswers(text) {
   const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length>0);
   return lines.map(l => l.replace(/^\s*\d+\.\s*/, '').trim());
@@ -122,14 +131,14 @@ function displayCurrent() {
     const q = wrongArray[currentIndex] || wrongArray[0];
     questionBox.textContent = `${q.num}. ${q.text}`;
     progress.textContent = `${currentIndex+1} / ${wrongArray.length} (틀린 문제만)`;
-    metaInfo.textContent = `원본 문제 수: ${rawQuestions.length} / 틀린 문제 수: ${wrongSet.size}`;
+    metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
     return;
   }
   if (workList.length===0) return;
   const q = workList[currentIndex];
   questionBox.textContent = `${q.num}. ${q.text}`;
   progress.textContent = `${currentIndex+1} / ${workList.length} (전체 모드)`;
-  metaInfo.textContent = `원본 문제 수: ${rawQuestions.length} / 틀린 문제 수: ${wrongSet.size}`;
+  metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
 }
 
 function getCurrentQuestion() {
@@ -141,9 +150,11 @@ function getCurrentQuestion() {
   }
 }
 
+// ✅ 정답 보기
 showAnswerBtn.addEventListener('click', () => {
+  if (examMode) return;
   const q = getCurrentQuestion();
-  if (!q || examMode) return;
+  if (!q) return;
   answerDiv.style.display = 'block';
   const ans = answers[q.num - 1];
   answerDiv.textContent = ans ? `정답: ${ans}` : '정답 정보가 없습니다.';
@@ -178,13 +189,11 @@ toggleWrongModeBtn.addEventListener('click', () => {
 });
 
 shuffleBtn.addEventListener('click', () => { if (!examMode){ buildWorkList(); displayCurrent(); } });
-
 clearWrongBtn.addEventListener('click', () => {
   if (examMode) return;
   if (!confirm('틀린 문제 기록을 초기화할까요?')) return;
   wrongSet = new Set(); saveWrongSet(); displayCurrent();
 });
-
 exportWrongBtn.addEventListener('click', () => {
   if (examMode) return;
   const list = rawQuestions.filter(q => wrongSet.has(q.num)).map(q => `${q.num}. ${q.text}`);
@@ -194,14 +203,17 @@ exportWrongBtn.addEventListener('click', () => {
   a.href = url; a.download = '틀린문제.txt'; a.click();
   URL.revokeObjectURL(url);
 });
-
 function saveWrongSet() {
   localStorage.setItem('quiz_wrong_list', JSON.stringify(Array.from(wrongSet)));
 }
 
-// ✅ 페이지 로드 시 자동으로 파일 로드
+// ✅ 공부 / 모의고사 파일 자동 로드
 window.addEventListener("DOMContentLoaded", async () => {
-  const isExam = location.search.includes("mode=exam");
+  await loadFiles(false); // 기본 공부 모드
+});
+
+// 📂 파일 로드 함수
+async function loadFiles(isExam = false) {
   const filePrefix = isExam ? "모의고사_" : "";
   try {
     const [qRes, aRes] = await Promise.all([
@@ -216,15 +228,21 @@ window.addEventListener("DOMContentLoaded", async () => {
     const aText = await aRes.text();
     rawQuestions = splitQuestions(qText);
     answers = parseAnswers(aText);
+
     if (isExam) startExamMode();
     else { buildWorkList(); displayCurrent(); }
   } catch (err) {
     questionBox.textContent = "파일 불러오기 오류: " + err;
   }
+}
+
+// 🏁 모의고사 시작
+startExamBtn.addEventListener('click', async () => {
+  if (!confirm("모의고사를 시작할까요? (50문항 랜덤)")) return;
+  await loadFiles(true);
 });
 
 // 🧮 모의고사 모드
-let examIndex = 0, score = 0, examMode = false;
 function startExamMode() {
   examMode = true;
   quizArea.style.display = 'block';
@@ -244,6 +262,7 @@ function showExamQuestion() {
   metaInfo.textContent = `현재 점수: ${score}`;
 }
 
+// 숫자키(1~4)로 답 입력
 document.addEventListener("keydown", (e) => {
   if (!examMode) return;
   if (e.key >= "1" && e.key <= "4") {
