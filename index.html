@@ -5,18 +5,27 @@
 <title>공부 퀴즈 (공부 + 모의고사 통합)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-         background:#f3f6fb; color:#1f2937; padding:22px; }
-  .container{ max-width:900px; margin:24px auto; background:white; padding:22px;
-              border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08); }
+  body {
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background:#f3f6fb; color:#1f2937; padding:22px;
+  }
+  .container{
+    max-width:900px; margin:24px auto; background:white; padding:22px;
+    border-radius:12px; box-shadow:0 6px 24px rgba(16,24,40,0.08);
+  }
   h1{ margin:0 0 10px 0; font-size:22px; }
   .controls{ display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
-  button{ padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600; }
+  button{
+    padding:10px 14px; border-radius:8px; border:0; cursor:pointer; font-weight:600;
+  }
   .btn-primary{ background:#2563eb; color:white; }
   .btn-success{ background:#16a34a; color:white; }
   .btn-danger{ background:#dc2626; color:white; }
   .btn-muted{ background:#e5e7eb; color:#111827; }
-  pre{ white-space:pre-wrap; text-align:left; background:#f8fafc; padding:16px; border-radius:8px; font-size:16px; }
+  pre{
+    white-space:pre-wrap; text-align:left; background:#f8fafc;
+    padding:16px; border-radius:8px; font-size:16px;
+  }
   #answer { margin-top:10px; font-weight:700; color:#0f172a; }
   .meta{ font-size:13px; color:#6b7280; margin-top:8px; }
 </style>
@@ -24,8 +33,10 @@
 <body>
   <div class="container">
     <h1>🧠 NVIDIA 자격 대비 퀴즈</h1>
-    <p class="meta">같은 폴더의 <code>공부.txt / 정답.txt</code> 또는
-      <code>모의고사_문제.txt / 모의고사_정답.txt</code>를 자동 불러옵니다.</p>
+    <p class="meta">
+      같은 폴더의 <code>문제.txt / 정답.txt</code> 또는
+      <code>모의고사_문제.txt / 모의고사_정답.txt</code>를 자동 불러옵니다.
+    </p>
 
     <div class="controls">
       <button id="startExamBtn" class="btn-primary">🏁 모의고사 시작</button>
@@ -52,8 +63,8 @@
   </div>
 
 <script>
-let rawQuestions = [];
-let answers = [];
+let rawQuestions = [];      // { num, stem, options: [{label,text}], correctIndex }
+let answers = [];           // 정답 텍스트 (원본)
 let workList = [];
 let currentIndex = 0;
 let wrongSet = new Set(JSON.parse(localStorage.getItem('quiz_wrong_list') || '[]'));
@@ -78,7 +89,15 @@ const exportWrongBtn = document.getElementById('exportWrong');
 const startExamBtn = document.getElementById('startExamBtn');
 const buttonBox = document.getElementById('buttonBox');
 
-// ✅ 문제 텍스트 파싱 (보기 포함)
+// ===================== 공통 유틸 =====================
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+// 문제 블록 나누기 (문제 번호 기준)
 function splitQuestions(text) {
   const trimmed = text.trim();
   const lines = trimmed.split(/\r?\n/);
@@ -94,56 +113,103 @@ function splitQuestions(text) {
     }
   }
   if (current.trim()) questions.push(current.trim());
-  // 🔽 여기만 수정
-  return questions.map((q) => {
+
+  return questions.map(q => {
     const match = q.match(/^\s*(\d+)\./);
-    const num = match ? parseInt(match[1]) : null;
-    return { num, text: q };
+    const num = match ? parseInt(match[1], 10) : null;
+    return { num, rawText: q };
   });
 }
 
-// ✅ 정답 텍스트 파싱
+// 정답 텍스트 파싱
 function parseAnswers(text) {
-  const lines = text.split(/\r?\n/).map(s => s.trim()).filter(s => s.length>0);
+  const lines = text.split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
   return lines.map(l => l.replace(/^\s*\d+\.\s*/, '').trim());
 }
 
-function shuffle(array) {
-  for (let i=array.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [array[i], array[j]] = [array[j], array[i]];
+// 한 문제에서 stem + options 추출
+// 형식 예: "1. 질문...? ① 보기1 ② 보기2 ③ 보기3 ④ 보기4"
+function extractStemAndOptions(rawText) {
+  // 앞의 "번호." 제거
+  let body = rawText.replace(/^\s*\d+\.\s*/, '').trim();
+
+  const firstOptMatch = body.match(/[①②③④]/);
+  if (!firstOptMatch) {
+    // 선택지가 없는 경우 (거의 없겠지만)
+    return { stem: body, options: [] };
   }
+
+  const stem = body.slice(0, firstOptMatch.index).trim();
+  const optsStr = body.slice(firstOptMatch.index);
+
+  const parts = optsStr.split(/(?=[①②③④])/);
+  const options = parts.map(p => {
+    const m = p.trim().match(/^([①②③④])\s*(.*)$/);
+    if (!m) return null;
+    return { label: m[1], text: m[2].trim() };
+  }).filter(Boolean);
+
+  return { stem, options };
 }
 
+// 질문 + 정답 텍스트로 구조화 + 보기 섞기
+function prepareQuestions(questionBlocks, answers) {
+  const labels = ['①','②','③','④'];
+
+  return questionBlocks.map((qBlock, idx) => {
+    const { stem, options } = extractStemAndOptions(qBlock.rawText);
+    const answerText = answers[idx];
+
+    // 정답이 들어 있는 원래 옵션 인덱스 찾기
+    let correctIdx = options.findIndex(o => o.text.includes(answerText));
+    if (correctIdx < 0) correctIdx = 0; // 못 찾으면 0으로 강제
+
+    // 섞기 준비 (원래 인덱스를 같이 들고 간다)
+    const optWithIndex = options.map((opt, i) => ({ idx: i, text: opt.text }));
+    shuffle(optWithIndex);
+
+    // 섞인 후 새 옵션 + 라벨 재부여
+    const shuffledOptions = optWithIndex.map((o, i) => ({
+      label: labels[i] || '',
+      text: o.text
+    }));
+
+    // 섞인 배열에서 정답 위치
+    const newCorrectIndex = optWithIndex.findIndex(o => o.idx === correctIdx);
+
+    return {
+      num: qBlock.num,
+      stem,
+      options: shuffledOptions,
+      correctIndex: newCorrectIndex,
+      answerText // 디버그/백업용
+    };
+  });
+}
+
+// 화면 출력용 문자열로 변환
+function formatQuestionDisplay(q, indexForExam = null) {
+  // indexForExam이 있으면 "1. " 이렇게 모의고사용 번호, 없으면 원래 번호 사용
+  const qNum = indexForExam != null ? indexForExam : q.num;
+  const lines = [];
+  lines.push(`${qNum}. ${q.stem}`);
+  q.options.forEach(o => {
+    lines.push(`${o.label} ${o.text}`);
+  });
+  return lines.join('\n');
+}
+
+// ===================== 상태 관련 =====================
 function buildWorkList() {
   workList = rawQuestions.slice();
   shuffle(workList);
   currentIndex = 0;
 }
 
-function displayCurrent() {
-  answerDiv.style.display = 'none';
-  answerDiv.textContent = '';
-  quizArea.style.display = 'block';
-  if (mode === 'wrong') {
-    const wrongArray = workList.filter(q => wrongSet.has(q.num));
-    if (wrongArray.length===0) {
-      questionBox.textContent = '📚 틀린 문제가 없습니다.';
-      progress.textContent = '';
-      metaInfo.textContent = '';
-      return;
-    }
-    const q = wrongArray[currentIndex] || wrongArray[0];
-    questionBox.textContent = `${q.num}. ${q.text}`;
-    progress.textContent = `${currentIndex+1} / ${wrongArray.length} (틀린 문제만)`;
-    metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
-    return;
-  }
-  if (workList.length===0) return;
-  const q = workList[currentIndex];
-  questionBox.textContent = `${q.num}. ${q.text}`;
-  progress.textContent = `${currentIndex+1} / ${workList.length} (전체 모드)`;
-  metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
+function saveWrongSet() {
+  localStorage.setItem('quiz_wrong_list', JSON.stringify(Array.from(wrongSet)));
 }
 
 function getCurrentQuestion() {
@@ -155,69 +221,117 @@ function getCurrentQuestion() {
   }
 }
 
-// ✅ 정답 보기
+// ===================== 화면 표시 (공부 모드) =====================
+function displayCurrent() {
+  answerDiv.style.display = 'none';
+  answerDiv.textContent = '';
+  quizArea.style.display = 'block';
+
+  if (mode === 'wrong') {
+    const wrongArray = workList.filter(q => wrongSet.has(q.num));
+    if (wrongArray.length === 0) {
+      questionBox.textContent = '📚 틀린 문제가 없습니다.';
+      progress.textContent = '';
+      metaInfo.textContent = '';
+      return;
+    }
+    const q = wrongArray[currentIndex] || wrongArray[0];
+    questionBox.textContent = formatQuestionDisplay(q);
+    progress.textContent = `${currentIndex + 1} / ${wrongArray.length} (틀린 문제만)`;
+    metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
+    return;
+  }
+
+  if (workList.length === 0) return;
+  const q = workList[currentIndex];
+  questionBox.textContent = formatQuestionDisplay(q);
+  progress.textContent = `${currentIndex + 1} / ${workList.length} (전체 모드)`;
+  metaInfo.textContent = `전체 문제: ${rawQuestions.length} / 틀린 문제: ${wrongSet.size}`;
+}
+
+function nextQuestion() {
+  const list = (mode === 'wrong')
+    ? workList.filter(q => wrongSet.has(q.num))
+    : workList;
+  if (list.length === 0) return;
+  currentIndex = (currentIndex + 1) % list.length;
+  displayCurrent();
+}
+
+// ===================== 버튼 이벤트 (공부 모드) =====================
 showAnswerBtn.addEventListener('click', () => {
   if (examMode) return;
   const q = getCurrentQuestion();
   if (!q) return;
   answerDiv.style.display = 'block';
-  const ans = answers[q.num - 1];
-  answerDiv.textContent = ans ? `정답: ${ans}` : '정답 정보가 없습니다.';
+  if (q.options.length && q.correctIndex >= 0) {
+    const opt = q.options[q.correctIndex];
+    answerDiv.textContent = `정답: ${opt.label} ${opt.text}`;
+  } else {
+    // 혹시 옵션 파싱 실패 시 원본 정답 텍스트라도 보여줌
+    const ansText = answers[q.num - 1] || q.answerText || '정답 정보 없음';
+    answerDiv.textContent = `정답: ${ansText}`;
+  }
 });
 
 correctBtn.addEventListener('click', () => {
   if (examMode) return;
   const q = getCurrentQuestion(); if (!q) return;
-  wrongSet.delete(q.num); saveWrongSet(); nextQuestion();
+  wrongSet.delete(q.num);
+  saveWrongSet();
+  nextQuestion();
 });
 
 wrongBtn.addEventListener('click', () => {
   if (examMode) return;
   const q = getCurrentQuestion(); if (!q) return;
-  wrongSet.add(q.num); saveWrongSet(); nextQuestion();
+  wrongSet.add(q.num);
+  saveWrongSet();
+  nextQuestion();
 });
 
 nextBtn.addEventListener('click', nextQuestion);
-function nextQuestion() {
-  const list = (mode==='wrong') ? workList.filter(q=>wrongSet.has(q.num)) : workList;
-  if (list.length===0) return;
-  currentIndex = (currentIndex + 1) % list.length;
-  displayCurrent();
-}
 
 toggleWrongModeBtn.addEventListener('click', () => {
   if (examMode) return;
-  mode = (mode==='all') ? 'wrong' : 'all';
-  toggleWrongModeBtn.textContent = `틀린 문제만 보기: ${mode==='wrong'?'켬':'끔'}`;
+  mode = (mode === 'all') ? 'wrong' : 'all';
+  toggleWrongModeBtn.textContent = `틀린 문제만 보기: ${mode === 'wrong' ? '켬' : '끔'}`;
   currentIndex = 0;
   displayCurrent();
 });
 
-shuffleBtn.addEventListener('click', () => { if (!examMode){ buildWorkList(); displayCurrent(); } });
+shuffleBtn.addEventListener('click', () => {
+  if (!examMode) {
+    buildWorkList();
+    displayCurrent();
+  }
+});
+
 clearWrongBtn.addEventListener('click', () => {
   if (examMode) return;
   if (!confirm('틀린 문제 기록을 초기화할까요?')) return;
-  wrongSet = new Set(); saveWrongSet(); displayCurrent();
+  wrongSet = new Set();
+  saveWrongSet();
+  displayCurrent();
 });
+
 exportWrongBtn.addEventListener('click', () => {
   if (examMode) return;
-  const list = rawQuestions.filter(q => wrongSet.has(q.num)).map(q => `${q.num}. ${q.text}`);
+  const list = rawQuestions
+    .filter(q => wrongSet.has(q.num))
+    .map(q => formatQuestionDisplay(q));
   const blob = new Blob([list.join('\n\n')], {type:'text/plain;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = '틀린문제.txt'; a.click();
   URL.revokeObjectURL(url);
 });
-function saveWrongSet() {
-  localStorage.setItem('quiz_wrong_list', JSON.stringify(Array.from(wrongSet)));
-}
 
-// ✅ 공부 / 모의고사 파일 자동 로드
+// ===================== 파일 로드 =====================
 window.addEventListener("DOMContentLoaded", async () => {
   await loadFiles(false); // 기본 공부 모드
 });
 
-// 📂 파일 로드 함수
 async function loadFiles(isExam = false) {
   const filePrefix = isExam ? "모의고사_" : "";
   try {
@@ -226,32 +340,40 @@ async function loadFiles(isExam = false) {
       fetch(`${filePrefix}정답.txt`)
     ]);
     if (!qRes.ok || !aRes.ok) {
-      questionBox.textContent = `⚠️ ${filePrefix}공부.txt 또는 ${filePrefix}정답.txt를 찾을 수 없습니다.`;
+      questionBox.textContent = `⚠️ ${filePrefix}문제.txt 또는 ${filePrefix}정답.txt를 찾을 수 없습니다.`;
       return;
     }
     const qText = await qRes.text();
     const aText = await aRes.text();
-    rawQuestions = splitQuestions(qText);
+
+    const questionBlocks = splitQuestions(qText);
     answers = parseAnswers(aText);
+    rawQuestions = prepareQuestions(questionBlocks, answers);
 
     if (isExam) startExamMode();
-    else { buildWorkList(); displayCurrent(); }
+    else {
+      examMode = false;
+      buttonBox.style.display = 'flex';
+      buildWorkList();
+      displayCurrent();
+    }
   } catch (err) {
     questionBox.textContent = "파일 불러오기 오류: " + err;
   }
 }
 
-// 🏁 모의고사 시작
+// ===================== 모의고사 모드 =====================
 startExamBtn.addEventListener('click', async () => {
   if (!confirm("모의고사를 시작할까요? (50문항 랜덤)")) return;
   await loadFiles(true);
 });
 
-// 🧮 모의고사 모드
 function startExamMode() {
   examMode = true;
   quizArea.style.display = 'block';
   buttonBox.style.display = 'none';
+
+  // 모의고사용 문제 리스트: 첫 50개에서 섞기 (문제 수가 50 이상이라고 가정)
   workList = rawQuestions.slice(0, 50);
   shuffle(workList);
   examIndex = 0;
@@ -261,7 +383,7 @@ function startExamMode() {
 
 function showExamQuestion() {
   const q = workList[examIndex];
-  questionBox.textContent = `${examIndex + 1}. ${q.text}`;
+  questionBox.textContent = formatQuestionDisplay(q, examIndex + 1);
   answerDiv.style.display = 'none';
   progress.textContent = `문항 ${examIndex + 1} / ${workList.length}`;
   metaInfo.textContent = `현재 점수: ${score}`;
@@ -271,10 +393,12 @@ function showExamQuestion() {
 document.addEventListener("keydown", (e) => {
   if (!examMode) return;
   if (e.key >= "1" && e.key <= "4") {
+    const choiceIdx = parseInt(e.key, 10) - 1; // 0~3
     const q = workList[examIndex];
-    const correct = answers[q.num - 1];
-    const isCorrect = q.text.includes(correct);
+
+    const isCorrect = (choiceIdx === q.correctIndex);
     if (isCorrect) score++;
+
     examIndex++;
     if (examIndex >= workList.length) showExamResult();
     else showExamQuestion();
@@ -283,10 +407,12 @@ document.addEventListener("keydown", (e) => {
 
 function showExamResult() {
   const percent = (score / workList.length * 100).toFixed(1);
-  questionBox.textContent = `✅ 시험 종료!\n당신의 점수: ${score} / ${workList.length} (${percent}%)`;
-  answerDiv.textContent = percent >= 90 ? "🎉 만점 수준!" :
-                          percent >= 70 ? "👍 합격 가능" :
-                          "⚠️ 추가 복습 필요";
+  questionBox.textContent =
+    `✅ 시험 종료!\n당신의 점수: ${score} / ${workList.length} (${percent}%)`;
+  answerDiv.textContent =
+    percent >= 90 ? "🎉 만점 수준!" :
+    percent >= 70 ? "👍 합격 가능" :
+                    "⚠️ 추가 복습 필요";
   answerDiv.style.display = "block";
 }
 </script>
